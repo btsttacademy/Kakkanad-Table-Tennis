@@ -1,0 +1,42 @@
+
+
+.App{
+    display: flex;
+    background-color: white;
+    flex-direction: column;
+    position: relative;
+    bottom: 0%;
+    top: 0%;
+    left: 50%;
+    transform: translate(-50%,-0%);
+    max-width: 1000px;
+    box-shadow: 0px 0px 80px rgba(0, 0, 0, 0.548);
+
+}
+
+@keyframes shine {
+  0% { transform: translateX(-100%) skewX(-12deg); }
+  100% { transform: translateX(200%) skewX(-12deg); }
+}
+
+.animate-shine {
+  animation: shine 3s infinite;
+}
+
+/* AlanSans Variable Font Face - Single File */
+@font-face {
+  font-family: 'AlanSans';
+  src: url('./Assets/fonts/AlanSans-VariableFont_wght.ttf') format('truetype');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Riope Variable Font Face - Single File */
+@font-face {
+  font-family: 'Riope';
+  src: url('./Assets/fonts/Riope.ttf') format('truetype');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}

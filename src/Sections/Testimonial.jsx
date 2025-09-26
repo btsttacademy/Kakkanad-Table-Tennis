@@ -8,7 +8,7 @@ const Testimonial = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyhfwASOAR05ljOLJfhk2hX10qYh_MVMXworB9L0GXu7M3q1BTvnRL5aD2PcXq98Xjk/exec";
+  const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyQPMDOtxn2sbxmcrEs-dlBVlu4sjbV7uOtsZpjAjkyhBsF9oPi01nVxTMd7PFDwcCCrQ/exec";
 
   const fetchTestimonials = async () => {
     try {
@@ -64,14 +64,14 @@ const Testimonial = () => {
         
         display: "flex",        // Added for centering
         flexDirection: "column",
-        justifyContent: "center",
+        justifyContent:"center",
         alignItems: "center",
         textAlign: "center"     // centers text horizontally
       }}
     >
       <Typography
-        variant="h2"
-        component="h1"
+        variant="h4"
+        component="h4"
         sx={{
           mb: 5,
           fontFamily: "'AlanSans', sans-serif",
@@ -85,7 +85,7 @@ const Testimonial = () => {
         What They've Said
       </Typography>
 
-      <Box sx={{ width: "100%", maxWidth: 1200 }}>
+      <Box sx={{ width: "100%", maxWidth: 1200 ,justifyContent:"center" }} >
         <Masonry columns={{ xs: 1, sm: 2, md: 3 }} spacing={3}>
           {testimonials.map((testimonial, index) => (
             <Card
@@ -106,6 +106,7 @@ const Testimonial = () => {
               <CardContent sx={{ p: 2, display: "flex", flexDirection: "column", textAlign: "left" }}>
                 <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
                   <UserAvatar photoUrl={testimonial.photo} name={testimonial.name} />
+                  
 
                   <Box>
                     <Typography variant="subtitle1" sx={{ color: "#FFFF", fontWeight: 600, fontFamily: "'AlanSans', sans-serif" }}>
@@ -123,42 +124,13 @@ const Testimonial = () => {
                   </Box>
                 </Box>
 
-                <Typography
-                  variant="body2"
-                  sx={{
-                    color: "rgba(255,255,255,0.9)",
-                    fontStyle: "italic",
-                    lineHeight: 1.4,
-                    maxHeight: 80,
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    display: "-webkit-box",
-                    WebkitLineClamp: 4,
-                    WebkitBoxOrient: "vertical",
-                    position: "relative",
-                    "&:before": {
-                      content: '"“"',
-                      fontSize: "1.8rem",
-                      color: "#FF9800",
-                      opacity: 0.7,
-                      position: "absolute",
-                      top: -10,
-                      left: 0,
-                    },
-                    "&:after": {
-                      content: '"”"',
-                      fontSize: "1.8rem",
-                      color: "#FF9800",
-                      opacity: 0.7,
-                      position: "absolute",
-                      bottom: 0,
-                      right: 0,
-                    },
-                    p: "0 10px"
-                  }}
-                >
-                  {testimonial.comment}
-                </Typography>
+            
+
+<div className=" relative  text-[rgba(255,255,255,0.9)] font-in px-2 text-center flex justify-center">
+<div className=" absolute text-[#FF9800] text-2xl top-0 left-0">“</div>
+<div className=" absolute text-[#FF9800] text-2xl bottom-0 right-0">”</div>
+{testimonial.comment} 
+</div>
               </CardContent>
             </Card>
           ))}

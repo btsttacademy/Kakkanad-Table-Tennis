@@ -51,7 +51,7 @@ const NavBar = () => {
   const [googleAuthLoading, setGoogleAuthLoading] = useState(false);
 
   // Replace this with your actual Google Apps Script URL
-  const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyhfwASOAR05ljOLJfhk2hX10qYh_MVMXworB9L0GXu7M3q1BTvnRL5aD2PcXq98Xjk/exec";
+  const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyQPMDOtxn2sbxmcrEs-dlBVlu4sjbV7uOtsZpjAjkyhBsF9oPi01nVxTMd7PFDwcCCrQ/exec";
 
   const [reviewData, setReviewData] = useState({
     name: "",
@@ -69,11 +69,11 @@ const NavBar = () => {
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   const menuItems = [
-  { label: "Home", href: "#home" },
-  { label: "About", href: "#about" },
-  { label: "Testimonials", href: "#testimonials" },
-  { label: "Gallery and Awards", href: "#gallery" }
-];
+    { label: "Home", href: "#home" },
+    { label: "About", href: "#about" },
+    { label: "Testimonials", href: "#testimonials" },
+    { label: "Gallery and Awards", href: "#gallery" }
+  ];
 
   // File to base64 conversion
   const fileToBase64 = (file) =>
@@ -108,9 +108,25 @@ const NavBar = () => {
     setCurrentTab(newValue);
   };
 
-  const handleMobileMenuItemClick = (index) => {
-    setCurrentTab(index);
+  const handleMobileMenuItemClick = (href) => {
+    // Close drawer first
     setDrawerOpen(false);
+    
+    // Wait a bit for drawer to close then scroll
+    setTimeout(() => {
+      const element = document.querySelector(href);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth' });
+      }
+    }, 100);
+  };
+
+  const handleDesktopTabClick = (href, index) => {
+    setCurrentTab(index);
+    const element = document.querySelector(href);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' });
+    }
   };
 
   const handleAddReviewClick = async () => {
@@ -302,8 +318,19 @@ const NavBar = () => {
 
   // Submit Review Function
   const handleReviewSubmit = async () => {
+    // Validation - Make photo and comment mandatory
     if (reviewData.rating === 0) {
       showFeedbackDialog("Please provide a rating", "error");
+      return;
+    }
+
+    if (!reviewData.photo) {
+      showFeedbackDialog("Please upload a profile photo", "error");
+      return;
+    }
+
+    if (!reviewData.comment.trim()) {
+      showFeedbackDialog("Please provide a review comment", "error");
       return;
     }
 
@@ -395,13 +422,6 @@ const NavBar = () => {
     }
   };
 
-  // Debug function to test the API
-  const testAPI = () => {
-    const testUrl = `${GOOGLE_SCRIPT_URL}?action=test&_=${Date.now()}`;
-    window.open(testUrl, '_blank');
-    showFeedbackDialog("Test URL opened in new tab. Check the browser console and Google Apps Script logs.");
-  };
-
   const drawerContent = (
     <Box
       sx={{
@@ -422,42 +442,33 @@ const NavBar = () => {
         </IconButton>
       </Box>
       <List>
-  {menuItems.map((item, index) => (
-    <ListItem
-      key={item.label}
-      component="a"
-      href={item.href}
-      onClick={(e) => {
-        e.preventDefault();
-        handleMobileMenuItemClick(index);
-        // Smooth scroll to section
-        const element = document.querySelector(item.href);
-        if (element) {
-          element.scrollIntoView({ behavior: 'smooth' });
-        }
-      }}
-      sx={{
-        border: currentTab === index ? "1px solid #FF9800" : "1px solid rgba(255,255,255,0.1)",
-        borderRadius: "8px",
-        marginBottom: 1,
-        background: currentTab === index ? "rgba(255,165,0,0.2)" : "rgba(255,255,255,0.05)",
-        textDecoration: 'none',
-        color: 'inherit',
-      }}
-    >
-      <ListItemText
-        primary={item.label}
-        sx={{
-          color: currentTab === index ? "#FF9800" : "white",
-          "& .MuiListItemText-primary": {
-            fontFamily: "'AlanSans', sans-serif",
-            fontWeight: currentTab === index ? 600 : 500,
-          },
-        }}
-      />
-    </ListItem>
-  ))}
-</List>
+        {menuItems.map((item, index) => (
+          <ListItem
+            key={item.label}
+            button
+            onClick={() => handleMobileMenuItemClick(item.href)}
+            sx={{
+              border: currentTab === index ? "1px solid #FF9800" : "1px solid rgba(255,255,255,0.1)",
+              borderRadius: "8px",
+              marginBottom: 1,
+              background: currentTab === index ? "rgba(255,165,0,0.2)" : "rgba(255,255,255,0.05)",
+              textDecoration: 'none',
+              color: 'inherit',
+            }}
+          >
+            <ListItemText
+              primary={item.label}
+              sx={{
+                color: currentTab === index ? "#FF9800" : "white",
+                "& .MuiListItemText-primary": {
+                  fontFamily: "'AlanSans', sans-serif",
+                  fontWeight: currentTab === index ? 600 : 500,
+                },
+              }}
+            />
+          </ListItem>
+        ))}
+      </List>
       <Box sx={{ padding: 2 }}>
         <CustomButton
           rating
@@ -467,8 +478,6 @@ const NavBar = () => {
           text={checkingReview ? "Checking..." : "Add Review"}
           disabled={checkingReview}
         />
-        {/* Temporary debug button */}
-       
       </Box>
     </Box>
   );
@@ -480,7 +489,6 @@ const NavBar = () => {
         sx={{
           background: "transparent",
           boxShadow: "none",
-          
         }}
       >
         <Toolbar sx={{ justifyContent: "space-between", padding: "8px 0" }}>
@@ -496,55 +504,44 @@ const NavBar = () => {
                 padding: "4px",
               }}
             >
-             <Tabs
-  value={currentTab}
-  onChange={handleTabChange}
-  sx={{
-    minHeight: "40px",
-    "& .MuiTabs-indicator": {
-      backgroundColor: "#f97316",
-      height: "100%",
-      borderRadius: "25px",
-    },
-    "& .MuiTab-root": {
-      color: "rgba(255,255,255,0.7)",
-      fontFamily: "'AlanSans', sans-serif",
-      fontWeight: 500,
-      fontSize: "14px",
-      textTransform: "none",
-      minHeight: "32px",
-      margin: "0 2px",
-      minWidth: "auto",
-      zIndex: 1,
-      "&.Mui-selected": {
-        color: "white",
-        fontWeight: 600,
-      },
-      "&:hover": {
-        color: "#E2DBD1",
-      },
-    },
-  }}
->
-  {menuItems.map((item, index) => (
-    <Tab 
-      key={item.label} 
-      label={item.label}
-      component="a"
-      href={item.href}
-      onClick={(e) => {
-        e.preventDefault();
-        setCurrentTab(index);
-        // Smooth scroll to section
-        const element = document.querySelector(item.href);
-        if (element) {
-          element.scrollIntoView({ behavior: 'smooth' });
-        }
-      }}
-    />
-  ))}
-</Tabs>
-
+              <Tabs
+                value={currentTab}
+                onChange={handleTabChange}
+                sx={{
+                  minHeight: "40px",
+                  "& .MuiTabs-indicator": {
+                    backgroundColor: "#f97316",
+                    height: "100%",
+                    borderRadius: "25px",
+                  },
+                  "& .MuiTab-root": {
+                    color: "rgba(255,255,255,0.7)",
+                    fontFamily: "'AlanSans', sans-serif",
+                    fontWeight: 500,
+                    fontSize: "14px",
+                    textTransform: "none",
+                    minHeight: "32px",
+                    margin: "0 2px",
+                    minWidth: "auto",
+                    zIndex: 1,
+                    "&.Mui-selected": {
+                      color: "white",
+                      fontWeight: 600,
+                    },
+                    "&:hover": {
+                      color: "#E2DBD1",
+                    },
+                  },
+                }}
+              >
+                {menuItems.map((item, index) => (
+                  <Tab 
+                    key={item.label} 
+                    label={item.label}
+                    onClick={() => handleDesktopTabClick(item.href, index)}
+                  />
+                ))}
+              </Tabs>
             </Box>
             <CustomButton
               rating
@@ -722,10 +719,10 @@ const NavBar = () => {
               )}
             </Box>
 
-            {/* Avatar Photo Upload */}
+            {/* Avatar Photo Upload - Now Mandatory */}
             <Box>
               <Typography gutterBottom sx={{ fontWeight: 500 }}>
-                Your Photo (Avatar, Optional)
+                Your Photo (Avatar) *
               </Typography>
               {photoUploading ? (
                 <Box sx={{ display: "flex", alignItems: "center", gap: 2, padding: 2 }}>
@@ -778,7 +775,7 @@ const NavBar = () => {
                   />
                   <FaCloudUploadAlt style={{ fontSize: "2rem", color: "#FF9800" }} />
                   <Typography variant="body2" sx={{ color: "rgba(255,255,255,0.7)" }}>
-                    Click to upload a photo
+                    Click to upload a photo (Required)
                   </Typography>
                   <Typography variant="caption" sx={{ color: "rgba(255,255,255,0.5)" }}>
                     PNG, JPG, JPEG (Max 5MB)
@@ -787,7 +784,7 @@ const NavBar = () => {
               )}
             </Box>
 
-            {/* Add Photos Multiple */}
+            {/* Add Photos Multiple - Optional */}
             <Box>
               <Typography gutterBottom sx={{ fontWeight: 500 }}>
                 Add Photos (Optional, Multiple)
@@ -866,15 +863,20 @@ const NavBar = () => {
                 size="large"
                 sx={{
                   color: "#FF9800",
-                  "& .MuiRating-iconFilled": { color: "#FF9800" },
+                  "& .MuiRating-iconEmpty": {
+                    color: "white", // White color for unselected stars
+                  },
+                  "& .MuiRating-iconFilled": { 
+                    color: "#FF9800" 
+                  },
                 }}
               />
             </Box>
 
-            {/* Comment */}
+            {/* Comment - Now Mandatory */}
             <Box>
               <Typography gutterBottom sx={{ fontWeight: 500 }}>
-                Your Review
+                Your Review *
               </Typography>
               <TextField
                 multiline
@@ -882,7 +884,7 @@ const NavBar = () => {
                 fullWidth
                 value={reviewData.comment}
                 onChange={(e) => handleInputChange("comment", e.target.value)}
-                placeholder="Share your experience with BT's TT Academy..."
+                placeholder="Share your experience with BT's TT Academy... (Required)"
                 variant="outlined"
                 sx={{
                   "& .MuiOutlinedInput-root": {
@@ -913,7 +915,7 @@ const NavBar = () => {
           <Button
             onClick={handleReviewSubmit}
             variant="contained"
-            disabled={!reviewData.name.trim() || reviewData.rating === 0 || loading || hasReviewed}
+            disabled={!reviewData.name.trim() || reviewData.rating === 0 || loading || hasReviewed || !reviewData.photo || !reviewData.comment.trim()}
             sx={{
               background: "linear-gradient(45deg, #FF9800 30%, #FF5722 90%)",
               "&:hover:not(:disabled)": {

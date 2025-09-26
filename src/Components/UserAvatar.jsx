@@ -12,7 +12,7 @@ const UserAvatar = ({ photoUrl, name }) => {
       src={showImage ? photoUrl : undefined}
       alt={name}
       onError={() => setImgError(true)}
-      sx={{ width: 48, height: 48, mr: 2, border: "2px solid #FF9800" }}
+      sx={{ width: 48, height: 48, mr: 2, border: "2px solid #FF9800",background:"none" }}
     >
       {!showImage && name ? name.charAt(0).toUpperCase() : null}
     </Avatar>

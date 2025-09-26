@@ -22,7 +22,7 @@ const Home = () => {
     message: ''
   });
 
-  const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx7y8umjO4kIoGI788WFdDAx4u2qw8oBxUHAclgO-qazxxC8jirQQPcUJZGdCFjTRvn/exec';
+  const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzDL8EEbiT6VmWrwkvjXM2F3e7s2MouHKN_pevAkN1bnWzVXGTUJVc4GJA0dKGue-8ukA/exec';
 
   const validateForm = () => {
     const newErrors = {
@@ -144,7 +144,7 @@ const Home = () => {
   return (
     <div className='relative h-screen rounded-xl my-2 w-full overflow-hidden'>
       
-      <div className='absolute inset-0 bg-homebg bg-cover bg-center bg-no-repeat z-0' />
+      <div className='absolute inset-0 bg-homebg bg-cover bg-left bg-no-repeat z-0' />
       
       <div className='absolute inset-0 bg-gradient-to-b from-black/10 via-black/20 to-black/70 z-1' />
       

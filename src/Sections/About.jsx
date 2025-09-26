@@ -32,7 +32,7 @@ const About = () => {
             I'm an experienced Table Tennis Player and Coach (25 years+
             experience in TT) with a long-standing background in competitive
             play and leadership: Currently offering coaching in and around
-            Kakkanad, Kangarappady, Millumpady, Navodhaya Junction, Thengod,
+            Kakkanad, Kangarappady, Millumpady, Navodhaya Junction, Thengod, Pallikkara,
             Edachira area's in Kochi- Kerala, for beginner and intermediate
             players
           </p>

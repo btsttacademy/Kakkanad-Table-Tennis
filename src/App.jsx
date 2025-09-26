@@ -8,7 +8,7 @@ const App = () => {
   return (
   
   <div className=" App px-2">
-    <Home/>
+    {/* <Home/> */}
     <About/>
     <Testimonial/>
     

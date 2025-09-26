@@ -43,7 +43,7 @@ const UserAvatar = ({ photoUrl, name }) => {
 
   return (
     <Avatar
-      src={showImage ? imageUrl : undefined}
+      src={`"${showImage ? imageUrl : undefined}"`}
       alt={name}
       onError={() => {
         console.log('Image failed to load');

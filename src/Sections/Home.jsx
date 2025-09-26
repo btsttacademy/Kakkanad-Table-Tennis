@@ -144,7 +144,7 @@ const Home = () => {
   return (
     <div className='relative h-screen rounded-xl my-2 w-full overflow-hidden'>
       
-      <div className='absolute inset-0 bg-homebg bg-cover bg-center bg-no-repeat z-0' />
+      <div className='absolute inset-0 bg-homebg max-[750px]:bg-homebgmb bg-cover bg-center bg-no-repeat z-0' />
       
       <div className='absolute inset-0 bg-gradient-to-b from-black/10 via-black/20 to-black/70 z-1' />
       

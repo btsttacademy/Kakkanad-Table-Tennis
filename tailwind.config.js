@@ -15,6 +15,7 @@ module.exports = {
       },
       backgroundImage: {
         'homebg': "url(./Assets/HomebgImage.png)",
+        'homebgmb': "url(./Assets/HomebgImagemb.png)",
         'img1': "url(./Assets/img1.jpg)",
         'img2': "url(./Assets/img2.jpg)",
         'img3': "url(./Assets/img3.jpg)",

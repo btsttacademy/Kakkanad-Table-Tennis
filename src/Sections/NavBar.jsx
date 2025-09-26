@@ -24,6 +24,8 @@ import {
   Chip,
   CircularProgress,
   Grid,
+  ImageList,
+  ImageListItem,
 } from "@mui/material";
 import { GiHamburgerMenu } from "react-icons/gi";
 import { FaTableTennis, FaCloudUploadAlt } from "react-icons/fa";
@@ -92,6 +94,34 @@ const NavBar = () => {
         type: file.type,
       }))
     );
+
+    // Function to convert Google Drive URL to direct image URL
+  const getDirectImageUrl = (driveUrl) => {
+    if (!driveUrl || driveUrl === "No photo" || driveUrl === "Error storing photo") {
+      return null;
+    }
+
+    // If it's already a direct URL, return as is
+    if (driveUrl.includes('uc?id=') || driveUrl.includes('export=download')) {
+      return driveUrl;
+    }
+
+      // Convert Google Drive file URL to direct download URL
+    if (driveUrl.includes('drive.google.com/file/d/')) {
+      const fileId = driveUrl.match(/\/file\/d\/([^\/]+)/)?.[1];
+      if (fileId) {
+        return `https://drive.google.com/uc?id=${fileId}&export=download`;
+      }
+    }
+    
+    return driveUrl;
+  };
+
+
+   const handleImageError = (event) => {
+    console.error('Image failed to load:', event.target.src);
+    event.target.style.display = 'none';
+  };
 
   // Check review existence
   useEffect(() => {

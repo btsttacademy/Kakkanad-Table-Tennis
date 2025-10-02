@@ -94,7 +94,6 @@ const App = () => {
             <div className="w-16 h-16 border-4 border-orange-200 rounded-full"></div>
             <div className="absolute top-0 left-0 w-16 h-16 border-4 border-orange-500 rounded-full animate-spin border-t-transparent"></div>
           </div>
-          <p className="mt-4 text-gray-600">Loading content from server...</p>
         </div>
       </div>
     );

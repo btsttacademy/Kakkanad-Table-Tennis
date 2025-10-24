@@ -18,7 +18,8 @@ const GalleryAndAwards = () => {
   ];
 
   return (
-    <Box id="gallery" sx={{ width: '100%' }}>
+    <div id="gallery" className=' pt-[85px]'>
+<Box  sx={{ width: '100%' }}>
       {/* Tabs Navigation */}
       <Box sx={{ 
         display: 'flex', 
@@ -84,6 +85,8 @@ const GalleryAndAwards = () => {
         {tabItems[currentTab].component}
       </Box>
     </Box>
+    </div>
+    
   );
 };
 

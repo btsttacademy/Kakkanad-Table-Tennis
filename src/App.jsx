@@ -1,27 +1,31 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import Home from "./Sections/Home";
 import "./App.css";
 import About from "./Sections/About";
 import Testimonial from "./Sections/Testimonial";
 import GalleryAndAwards from "./Sections/GalleryAndAwards";
 import Footer from "./Sections/Footer";
+import NavBar from "./Sections/NavBar";
 
-
-const SERVER_URL = "https://btsttacademybe.onrender.com"; // Change this in production
+const SERVER_URL = "https://btsttacademybe.onrender.com";
 
 const App = () => {
   const [contentData, setContentData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [showStickyNav, setShowStickyNav] = useState(false);
+  
+  const homeRef = useRef(null);
+  const aboutRef = useRef(null);
 
-  // Fetch data from your Node.js server
-  const fetchData = async () => {
+  // Single API call to fetch data
+  const fetchData = async (forceRefresh = false) => {
     try {
       setLoading(true);
       setError(null);
       
-      // Use your Node.js server endpoint for web content
-      const url = `${SERVER_URL}/api/web-content`;
+      // Use single API endpoint with optional refresh parameter
+      const url = `${SERVER_URL}/api/web-content${forceRefresh ? '?refresh=true' : ''}`;
       
       const response = await fetch(url);
       
@@ -33,63 +37,50 @@ const App = () => {
       
       if (result.success && result.data) {
         setContentData(result.data);
-        console.log('✅ Web content loaded successfully');
-        if (result.cached) {
-          console.log('📦 Using cached content');
-        }
       } else {
         throw new Error(result.message || "No data found from server");
       }
     } catch (err) {
-      console.error("Error fetching data:", err);
       setError(err.message);
-      // Don't set any default data - let the error state handle it
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    // This will run every time the component mounts (page reload)
-    // fetchData();
-    refreshData()
-  }, []); // Empty dependency array means it runs once on mount
+    // Single API call on component mount
+    fetchData(false);
+  }, []);
 
-  // Function to refresh data
-  const refreshData = async () => {
-    try {
-      setLoading(true);
-      setError(null);
+  useEffect(() => {
+    const handleScroll = () => {
+      if (!homeRef.current) return;
+
+      const homeRect = homeRef.current.getBoundingClientRect();
+      const homeMidPoint = homeRect.top + (homeRect.height / 2);
       
-      const url = `${SERVER_URL}/api/web-content/refresh`;
-      
-      const response = await fetch(url);
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      const result = await response.json();
-      
-      if (result.success && result.data) {
-        setContentData(result.data);
-        console.log('✅ Web content refreshed successfully');
+      // Show sticky nav when Home section's midpoint crosses the top of the viewport
+      if (homeMidPoint <= 0) {
+        setShowStickyNav(true);
       } else {
-        throw new Error(result.message || "Failed to refresh data");
+        setShowStickyNav(false);
       }
-    } catch (err) {
-      console.error("Error refreshing data:", err);
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    
+    // Initial check
+    handleScroll();
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, [contentData]);
 
   if (loading) {
     return (
       <div className="flex justify-center items-center h-screen bg-white">
         <div className="text-center">
-          {/* Orange Material-UI inspired loader */}
           <div className="relative inline-block">
             <div className="w-16 h-16 border-4 border-orange-200 rounded-full"></div>
             <div className="absolute top-0 left-0 w-16 h-16 border-4 border-orange-500 rounded-full animate-spin border-t-transparent"></div>
@@ -111,7 +102,7 @@ const App = () => {
           </p>
           <div className="space-y-2">
             <button 
-              onClick={refreshData}
+              onClick={() => fetchData(true)}
               className="w-full px-6 py-3 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors font-medium"
             >
               Try Again
@@ -129,35 +120,48 @@ const App = () => {
   }
 
   return (
-    <div className="App px-2">
+    <div className="App">
       {contentData && (
         <>
+          {/* Sticky navbar that appears when Home section's midpoint crosses the top */}
+          {showStickyNav && (
+            <div className="sticky top-0 z-50 bg-black/20 animate-in slide-in-from-top duration-300">
+              <NavBar />
+            </div>
+          )}
           
+          {/* Home section reference for scroll detection */}
+          <div ref={homeRef}>
+            <Home 
+              mainHeading={contentData.MainHeading}
+              mainDescription={contentData.MainDescription}
+              mainBG={contentData.mainBG}
+              mainBGmb={contentData.mainBGmb}
+            />
+          </div>
           
-          <Home 
-            mainHeading={contentData.MainHeading}
-            mainDescription={contentData.MainDescription}
-            mainBG={contentData.mainBG}
-            mainBGmb={contentData.mainBGmb}
-          />
-          <About 
-            aboutHeading={contentData.AboutHeading}
-            aboutDescription={contentData.AboutDescription}
-            feature1Heading={contentData.dh1}
-            feature1Description={contentData.dd1}
-            feature2Heading={contentData.dh2}
-            feature2Description={contentData.dd2}
-            images={[contentData.img1, contentData.img2, contentData.img3]}
-            coachingHeading={contentData.coaching}
-            coachingDescription={contentData.coachingDes}
-            groupCoachingHeading={contentData.Groupcoaching}
-            groupCoachingDescription={contentData.GroupcoachingDes}
-            price={contentData.oneTimeCharge}
-            timing1Heading={contentData.Timingh1}
-            timing1Description={contentData.Timingd1}
-            timing2Heading={contentData.Timingh2}
-            timing2Description={contentData.Timingd2}
-          />
+          {/* About section reference */}
+          <div ref={aboutRef}>
+            <About 
+              aboutHeading={contentData.AboutHeading}
+              aboutDescription={contentData.AboutDescription}
+              feature1Heading={contentData.dh1}
+              feature1Description={contentData.dd1}
+              feature2Heading={contentData.dh2}
+              feature2Description={contentData.dd2}
+              images={[contentData.img1, contentData.img2, contentData.img3]}
+              coachingHeading={contentData.coaching}
+              coachingDescription={contentData.coachingDes}
+              groupCoachingHeading={contentData.Groupcoaching}
+              groupCoachingDescription={contentData.GroupcoachingDes}
+              price={contentData.oneTimeCharge}
+              timing1Heading={contentData.Timingh1}
+              timing1Description={contentData.Timingd1}
+              timing2Heading={contentData.Timingh2}
+              timing2Description={contentData.Timingd2}
+            />
+          </div>
+          
           <Testimonial />
           <GalleryAndAwards />
           <Footer />

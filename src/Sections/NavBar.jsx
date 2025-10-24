@@ -22,6 +22,7 @@ import {
 } from "@mui/material";
 import { GiHamburgerMenu } from "react-icons/gi";
 import { FaTableTennis } from "react-icons/fa";
+import { FiPhone } from "react-icons/fi";
 import { Close } from "@mui/icons-material";
 import CustomButton from "../Components/CustomButton";
 import { GoogleLogin } from "@react-oauth/google";
@@ -77,22 +78,28 @@ const NavBar = () => {
     { label: "Gallery and Awards", href: "#gallery" },
   ];
 
+  // Phone number to call
+  const phoneNumber = "7012266274"; // Replace with your actual phone number
 
-   useEffect(() => {
-refreshTestimonials()      
-    }, []);
+  useEffect(() => {
+    refreshTestimonials()      
+  }, []);
 
-    // Function to refresh testimonials
-const refreshTestimonials = async () => {
-  try {
-    const response = await fetch(`${SERVER_URL}/api/reviews/testimonials/refresh`);
-    const data = await response.json();
-    
-   
-  } catch (error) {
-    console.error("Error refreshing testimonials:", error);
-  }
-};
+  // Function to refresh testimonials
+  const refreshTestimonials = async () => {
+    try {
+      const response = await fetch(`${SERVER_URL}/api/reviews/testimonials/refresh`);
+      const data = await response.json();
+    } catch (error) {
+      console.error("Error refreshing testimonials:", error);
+    }
+  };
+
+  // Function to handle phone call
+  const handlePhoneCall = () => {
+    // Use tel: protocol to open native phone dialer
+    window.location.href = `tel:${phoneNumber}`;
+  };
 
   // File to base64 conversion
   const fileToBase64 = (file) =>
@@ -302,77 +309,76 @@ const refreshTestimonials = async () => {
     setFeedbackDialog((prev) => ({ ...prev, open: false }));
   };
 
- 
-// Submit Review Function - SIMPLIFIED SUCCESS MESSAGE
-const handleReviewSubmit = async () => {
-  if (reviewData.rating === 0) {
-    showFeedbackDialog("Please provide a rating", "error");
-    return;
-  }
-
-  if (!reviewData.comment.trim()) {
-    showFeedbackDialog("Please provide a review comment", "error");
-    return;
-  }
-
-  setLoading(true);
-
-  try {
-    const additionalPhotosBase64 = addPhotos.length > 0 
-      ? await filesToBase64Array(addPhotos) 
-      : [];
-
-    const payload = {
-      name: reviewData.name.trim(),
-      email: user?.email || "unknown@example.com",
-      rating: reviewData.rating,
-      comment: reviewData.comment?.trim() || "",
-      photo: user?.picture ? user.picture : null,
-      additionalPhotos: additionalPhotosBase64,
-    };
-
-    console.log('Submitting review with payload:', payload);
-
-    const response = await fetch(`${SERVER_URL}/api/reviews/submit`, {
-      method: "POST",
-      headers: { 
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(payload),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+  // Submit Review Function - SIMPLIFIED SUCCESS MESSAGE
+  const handleReviewSubmit = async () => {
+    if (reviewData.rating === 0) {
+      showFeedbackDialog("Please provide a rating", "error");
+      return;
     }
 
-    const data = await response.json();
-    console.log('Submission response:', data);
+    if (!reviewData.comment.trim()) {
+      showFeedbackDialog("Please provide a review comment", "error");
+      return;
+    }
 
-    if (data.success) {
-      // Simple success message without storage details
-      showFeedbackDialog("Thank you! Your review was submitted successfully.", "success");
-      handleReviewDialogClose();
-      setHasReviewed(true);
-    } else {
-      throw new Error(data.message || "Submission failed");
+    setLoading(true);
+
+    try {
+      const additionalPhotosBase64 = addPhotos.length > 0 
+        ? await filesToBase64Array(addPhotos) 
+        : [];
+
+      const payload = {
+        name: reviewData.name.trim(),
+        email: user?.email || "unknown@example.com",
+        rating: reviewData.rating,
+        comment: reviewData.comment?.trim() || "",
+        photo: user?.picture ? user.picture : null,
+        additionalPhotos: additionalPhotosBase64,
+      };
+
+      console.log('Submitting review with payload:', payload);
+
+      const response = await fetch(`${SERVER_URL}/api/reviews/submit`, {
+        method: "POST",
+        headers: { 
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log('Submission response:', data);
+
+      if (data.success) {
+        // Simple success message without storage details
+        showFeedbackDialog("Thank you! Your review was submitted successfully.", "success");
+        handleReviewDialogClose();
+        setHasReviewed(true);
+      } else {
+        throw new Error(data.message || "Submission failed");
+      }
+    } catch (error) {
+      console.error("Review submission error:", error);
+      
+      let errorMessage = "Submission failed. Please try again.";
+      if (error.message.includes("duplicate") || error.message.includes("already submitted")) {
+        errorMessage = "You have already submitted a review with this email.";
+        setHasReviewed(true);
+      } else if (error.message.includes("network") || error.message.includes("fetch")) {
+        errorMessage = "Network error. Please check your connection and try again.";
+      }
+      
+      showFeedbackDialog(errorMessage, "error");
+    } finally {
+      setLoading(false);
     }
-  } catch (error) {
-    console.error("Review submission error:", error);
-    
-    let errorMessage = "Submission failed. Please try again.";
-    if (error.message.includes("duplicate") || error.message.includes("already submitted")) {
-      errorMessage = "You have already submitted a review with this email.";
-      setHasReviewed(true);
-    } else if (error.message.includes("network") || error.message.includes("fetch")) {
-      errorMessage = "Network error. Please check your connection and try again.";
-    }
-    
-    showFeedbackDialog(errorMessage, "error");
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   // Drawer Content
   const drawerContent = (
@@ -524,23 +530,48 @@ const handleReviewSubmit = async () => {
               disabled={checkingReview}
             />
           </Box>
-          <IconButton
-            sx={{
-              display: { xs: "flex", md: "none" },
-              color: "white",
-              background: "rgba(0,0,0,0.1)",
-              border: "1px solid rgba(255,255,255,0.1)",
-              "&:hover": {
-                background: "rgba(255,165,0,0.2)",
-              },
-            }}
-            onClick={handleDrawerToggle}
-          >
-            <GiHamburgerMenu />
-          </IconButton>
+          
+          {/* Mobile Icons Container - Only visible on mobile */}
+          <Box sx={{ 
+            display: { xs: "flex", md: "none" }, 
+            alignItems: "center", 
+            gap: 1 
+          }}>
+            {/* Phone Icon */}
+            <IconButton
+              sx={{
+                color: "white",
+                background: "rgba(0,0,0,0.1)",
+                border: "1px solid rgba(255,255,255,0.1)",
+                "&:hover": {
+                  background: "rgba(255,165,0,0.2)",
+                },
+              }}
+              onClick={handlePhoneCall}
+              aria-label="Call BT's TT Academy"
+            >
+              <FiPhone />
+            </IconButton>
+            
+            {/* Hamburger Menu */}
+            <IconButton
+              sx={{
+                color: "white",
+                background: "rgba(0,0,0,0.1)",
+                border: "1px solid rgba(255,255,255,0.1)",
+                "&:hover": {
+                  background: "rgba(255,165,0,0.2)",
+                },
+              }}
+              onClick={handleDrawerToggle}
+            >
+              <GiHamburgerMenu />
+            </IconButton>
+          </Box>
         </Toolbar>
       </AppBar>
 
+      {/* Rest of the code remains the same */}
       <Drawer
         variant="temporary"
         anchor="right"

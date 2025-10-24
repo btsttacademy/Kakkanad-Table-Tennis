@@ -38,7 +38,7 @@ const About = ({
   };
 
   return (
-    <div id="about" className="py-20">
+    <div id="about" className="py-20 ">
       <div className="flex max-[750px]:flex-col bg-gray-50 rounded-xl p-5 gap-5">
         <div className="flex-1 flex flex-col gap-4">
           <p className="font-riope text-[35px] leading-9 text-black/90">

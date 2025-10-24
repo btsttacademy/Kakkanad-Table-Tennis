@@ -113,15 +113,15 @@ const Home = ({mainHeading,mainDescription,mainBG,mainBGmb}) => {
         let successMessage = 'Message sent successfully! We will get back to you soon.';
         
         // Add storage details to message
-        if (result.storedIn) {
-          const storageDetails = [];
-          if (result.storedIn.googleSheets) storageDetails.push('Google Sheets');
-          if (result.storedIn.mongodb) storageDetails.push('Database');
+        // if (result.storedIn) {
+        //   const storageDetails = [];
+        //   if (result.storedIn.googleSheets) storageDetails.push('Google Sheets');
+        //   if (result.storedIn.mongodb) storageDetails.push('Database');
           
-          if (storageDetails.length > 0) {
-            successMessage += ` (Stored in: ${storageDetails.join(' + ')})`;
-          }
-        }
+        //   if (storageDetails.length > 0) {
+        //     successMessage += ` (Stored in: ${storageDetails.join(' + ')})`;
+        //   }
+        // }
         
         setDialog({
           open: true,

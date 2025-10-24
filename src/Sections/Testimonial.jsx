@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Rating,
   CircularProgress,
@@ -6,46 +6,59 @@ import {
   Typography,
   Card,
   CardContent,
-  Avatar,
   Dialog,
   IconButton,
   Chip,
+  MobileStepper,
   Button,
+  Grid,
 } from "@mui/material";
-import Masonry from "@mui/lab/Masonry";
-import UserAvatar from "../Components/UserAvatar";
-import { Close, NavigateBefore, NavigateNext } from "@mui/icons-material";
+import { 
+  Close, 
+  NavigateBefore, 
+  NavigateNext,
+  KeyboardArrowLeft,
+  KeyboardArrowRight,
+  ViewCarousel,
+} from "@mui/icons-material";
+import { useTheme } from '@mui/material/styles';
 
 const Testimonial = () => {
   const [testimonials, setTestimonials] = useState([]);
-  const [displayTestimonials, setDisplayTestimonials] = useState([]);
+  const [allTestimonials, setAllTestimonials] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [imageDialogOpen, setImageDialogOpen] = useState(false);
+  const [detailDialogOpen, setDetailDialogOpen] = useState(false);
+  const [allTestimonialsDialogOpen, setAllTestimonialsDialogOpen] = useState(false);
   const [selectedImage, setSelectedImage] = useState(null);
   const [selectedTestimonial, setSelectedTestimonial] = useState(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [showAll, setShowAll] = useState(false);
-  const itemsPerPage = 10;
+  const [activeStep, setActiveStep] = useState(0);
+  const [autoPlay, setAutoPlay] = useState(true);
+  const [maxLines, setMaxLines] = useState(3);
+  
+  const theme = useTheme();
+  const autoPlayRef = useRef(null);
+  const carouselRef = useRef(null);
+  const maxSteps = 10; // Number of testimonials in carousel
 
   // Updated to use your backend API instead of Google Apps Script
   const SERVER_URL = "https://btsttacademybe.onrender.com";
+  // const SERVER_URL = "http://localhost:3210";
 
   // Function to handle base64 images from MongoDB
   const getImageUrl = (photoData) => {
     if (!photoData) return null;
 
-    // If it's a base64 object from MongoDB
     if (typeof photoData === 'object' && photoData.base64) {
       return `data:${photoData.type || 'image/jpeg'};base64,${photoData.base64}`;
     }
     
-    // If it's already a data URL
     if (typeof photoData === 'string' && photoData.startsWith('data:')) {
       return photoData;
     }
     
-    // If it's a URL (for profile photos)
     if (typeof photoData === 'string' && photoData.startsWith('http')) {
       return photoData;
     }
@@ -60,9 +73,7 @@ const Testimonial = () => {
     }
 
     try {
-      // Convert base64 objects to data URLs
       const photoUrls = photosData.map(photo => getImageUrl(photo)).filter(url => url !== null);
-      
       console.log(`📸 Processed ${photoUrls.length} additional photos from MongoDB`);
       return photoUrls;
     } catch (error) {
@@ -71,14 +82,12 @@ const Testimonial = () => {
     }
   };
 
-  // FIXED: Safe URL validation function
+  // Safe URL validation function
   const testImageUrl = (url) => {
-    // Check if url is a string and has the required method
     if (!url || typeof url !== 'string') {
       return false;
     }
 
-    // Check if it's a base64 data URL or regular URL
     const isValidUrl = url.startsWith('data:') || 
                       url.startsWith('http') || 
                       url.startsWith('https');
@@ -86,7 +95,7 @@ const Testimonial = () => {
     return isValidUrl;
   };
 
-  // FIXED: Safe image click handler - only for additional photos
+  // Safe image click handler
   const handleImageClick = (testimonial, imageUrl, index = 0) => {
     if (!testImageUrl(imageUrl)) {
       console.warn('Invalid image URL:', imageUrl);
@@ -99,6 +108,82 @@ const Testimonial = () => {
     setImageDialogOpen(true);
   };
 
+  // Handle testimonial card click for detail dialog
+  const handleCardClick = (testimonial) => {
+    setSelectedTestimonial(testimonial);
+    setDetailDialogOpen(true);
+  };
+
+  // Handle view all testimonials
+  const handleViewAll = () => {
+    setAllTestimonialsDialogOpen(true);
+  };
+
+  // Carousel navigation
+  const handleNext = () => {
+    setActiveStep((prevActiveStep) => (prevActiveStep + 1) % Math.min(maxSteps, testimonials.length));
+  };
+
+  const handleBack = () => {
+    setActiveStep((prevActiveStep) => (prevActiveStep - 1 + Math.min(maxSteps, testimonials.length)) % Math.min(maxSteps, testimonials.length));
+  };
+
+  // Auto-play functionality with hover/touch control
+  useEffect(() => {
+    if (autoPlay && testimonials.length > 0) {
+      autoPlayRef.current = setInterval(() => {
+        handleNext();
+      }, 5000); // Change slide every 5 seconds
+    }
+
+    return () => {
+      if (autoPlayRef.current) {
+        clearInterval(autoPlayRef.current);
+      }
+    };
+  }, [autoPlay, testimonials.length]);
+
+  // Handle hover and touch events for auto-play control
+  const handleMouseEnter = () => {
+    setAutoPlay(false);
+  };
+
+  const handleMouseLeave = () => {
+    setAutoPlay(true);
+  };
+
+  // Touch events for mobile
+  const handleTouchStart = () => {
+    setAutoPlay(false);
+  };
+
+  const handleTouchEnd = () => {
+    // Restart auto-play after a delay when touch ends
+    setTimeout(() => {
+      setAutoPlay(true);
+    }, 3000);
+  };
+
+  // Responsive text lines
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth < 600) {
+        setMaxLines(2);
+      } else if (window.innerWidth < 960) {
+        setMaxLines(3);
+      } else {
+        setMaxLines(4);
+      }
+    };
+
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  }, []);
+
   const fetchTestimonials = async () => {
     try {
       setLoading(true);
@@ -106,7 +191,6 @@ const Testimonial = () => {
       
       console.log("🔄 Fetching testimonials from backend...");
 
-      // Use your backend API endpoint
       const response = await fetch(`${SERVER_URL}/api/reviews/testimonials`);
       
       if (!response.ok) {
@@ -118,29 +202,24 @@ const Testimonial = () => {
       console.log("📊 Backend response:", data);
 
       if (data.success && data.testimonials) {
-        // Process testimonials with base64 photos from MongoDB
-        const processedTestimonials = data.testimonials.map((testimonial, index) => {
-          const additionalPhotos = parseAdditionalPhotos(testimonial.additionalPhotos);
-          const profilePhoto = getImageUrl(testimonial.photo);
+        // Sort by rating (highest first)
+        const sortedTestimonials = data.testimonials
+          .sort((a, b) => (b.rating || 0) - (a.rating || 0))
+          .map((testimonial, index) => {
+            const additionalPhotos = parseAdditionalPhotos(testimonial.additionalPhotos);
+            const profilePhoto = getImageUrl(testimonial.photo);
 
-          console.log(`👤 ${testimonial.name}:`, {
-            profilePhoto: profilePhoto ? '✅' : '❌',
-            additionalPhotos: additionalPhotos.length,
-            source: testimonial.source || 'unknown'
+            return {
+              ...testimonial,
+              additionalPhotos: additionalPhotos,
+              photo: profilePhoto,
+              timestamp: testimonial.timestamp || testimonial.storedAt || new Date()
+            };
           });
 
-          return {
-            ...testimonial,
-            additionalPhotos: additionalPhotos,
-            photo: profilePhoto,
-            // Keep original timestamp handling
-            timestamp: testimonial.timestamp || testimonial.storedAt || new Date()
-          };
-        });
-
-        console.log(`✅ Loaded ${processedTestimonials.length} testimonials`);
-        setTestimonials(processedTestimonials);
-        setDisplayTestimonials(processedTestimonials.slice(0, itemsPerPage));
+        console.log(`✅ Loaded ${sortedTestimonials.length} testimonials`);
+        setAllTestimonials(sortedTestimonials);
+        setTestimonials(sortedTestimonials.slice(0, maxSteps)); // Only top 10 for carousel
       } else {
         throw new Error(data.message || "No testimonials found");
       }
@@ -148,7 +227,7 @@ const Testimonial = () => {
       console.error("Fetch error:", err);
       setError(err.message);
       setTestimonials([]);
-      setDisplayTestimonials([]);
+      setAllTestimonials([]);
     } finally {
       setLoading(false);
     }
@@ -158,16 +237,10 @@ const Testimonial = () => {
     fetchTestimonials();
   }, []);
 
-  useEffect(() => {
-    if (showAll) {
-      setDisplayTestimonials(testimonials);
-    } else {
-      setDisplayTestimonials(testimonials.slice(0, itemsPerPage));
-    }
-  }, [showAll, testimonials]);
-
-  const handleCloseDialog = () => {
+  const handleCloseDialogs = () => {
     setImageDialogOpen(false);
+    setDetailDialogOpen(false);
+    setAllTestimonialsDialogOpen(false);
     setSelectedImage(null);
     setSelectedTestimonial(null);
     setCurrentImageIndex(0);
@@ -193,8 +266,18 @@ const Testimonial = () => {
     }
   };
 
-  const toggleShowAll = () => {
-    setShowAll(!showAll);
+  // Truncate text based on responsive maxLines
+  const truncateText = (text, maxLength = 150) => {
+    if (!text) return '';
+    
+    if (window.innerWidth < 600) {
+      maxLength = 100;
+    } else if (window.innerWidth < 960) {
+      maxLength = 120;
+    }
+    
+    if (text.length <= maxLength) return text;
+    return text.substring(0, maxLength) + '...';
   };
 
   if (loading) {
@@ -246,8 +329,9 @@ const Testimonial = () => {
   }
 
   return (
-    <Box
-      id="testimonials"
+    <div id="testimonials" className=" pt-[85px]">
+<Box
+      
       sx={{
         background: "linear-gradient(135deg, rgba(0,0,0,0.9) 0%, rgba(50,50,50,0.95) 100%)",
         color: "white",
@@ -257,6 +341,23 @@ const Testimonial = () => {
         justifyContent: "center",
         alignItems: "center",
         textAlign: "center",
+        
+        minHeight: '60vh',
+        // Custom scrollbar styles
+        '& ::-webkit-scrollbar': {
+          width: '8px',
+        },
+        '& ::-webkit-scrollbar-track': {
+          background: 'rgba(255,255,255,0.1)',
+          borderRadius: '4px',
+        },
+        '& ::-webkit-scrollbar-thumb': {
+          background: 'linear-gradient(45deg, #FF9800 30%, #FF5722 90%)',
+          borderRadius: '4px',
+        },
+        '& ::-webkit-scrollbar-thumb:hover': {
+          background: 'linear-gradient(45deg, #FF5722 30%, #FF9800 90%)',
+        },
       }}
     >
       <Typography
@@ -275,77 +376,486 @@ const Testimonial = () => {
         What They've Said
       </Typography>
 
-      <Box sx={{ width: "100%", maxWidth: 1200, justifyContent: "center" }}>
-        <Masonry columns={{ xs: 1, sm: 2, md: 3 }} spacing={3}>
-          {displayTestimonials.map((testimonial, index) => {
-            const additionalPhotos = testimonial.additionalPhotos || [];
-            const hasAdditionalPhotos = additionalPhotos.length > 0;
+      {/* Carousel Slider */}
+      <Box 
+        sx={{ width: "100%", maxWidth: 800, position: 'relative' }}
+        ref={carouselRef}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+      >
+        <Box sx={{ position: 'relative' }}>
+          {/* Main Carousel Card */}
+          {testimonials[activeStep] && (
+            <Card
+              onClick={() => handleCardClick(testimonials[activeStep])}
+              sx={{
+                background: "rgba(255,255,255,0.05)",
+                backdropFilter: "blur(10px)",
+                border: "1px solid rgba(255,255,255,0.1)",
+                borderRadius: 3,
+                overflow: "hidden",
+                cursor: 'pointer',
+                transition: "transform 0.3s ease, box-shadow 0.3s ease",
+                "&:hover": {
+                  transform: "translateY(-5px)",
+                  boxShadow: "0 10px 30px rgba(255,152,0,0.3)",
+                },
+                minHeight: 280,
+              }}
+            >
+              <CardContent sx={{ p: 3 }}>
+                <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+                  <Box
+                    sx={{
+                      width: 60,
+                      height: 60,
+                      borderRadius: '50%',
+                      overflow: 'hidden',
+                      mr: 2,
+                      border: '2px solid #FF9800',
+                      flexShrink: 0
+                    }}
+                  >
+                    <img
+                      src={testimonials[activeStep].photo || '/default-avatar.png'}
+                      alt={testimonials[activeStep].name}
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover'
+                      }}
+                      onError={(e) => {
+                        e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMzAiIGN5PSIzMCIgcj0iMzAiIGZpbGw9IiNGRjk4MDAiLz4KPHN2ZyB4PSIxNSIgeT0iMTUiIHdpZHRoPSIzMCIgaGVpZ2h0PSIzMCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJ3aGl0ZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEyIDEyYzIuMjEgMCA0LTEuNzkgNC00cy0xLjc5LTQtNC00LTQgMS43OS00IDQgMS43OSA0IDQgNHptMCAyYy0yLjY3IDAtOCAxLjM0LTggNHYyaDE2di0yYzAtMi42Ni01LjMzLTQtOC00eiIvPgo8L3N2Zz4KPC9zdmc+';
+                      }}
+                    />
+                  </Box>
+                  <Box sx={{ flexGrow: 1, textAlign: 'left' }}>
+                    <Typography
+                      variant="h6"
+                      sx={{
+                        color: "#FFFF",
+                        fontWeight: 600,
+                        fontFamily: "'AlanSans', sans-serif",
+                        fontSize: { xs: '1rem', md: '1.25rem' }
+                      }}
+                    >
+                      {testimonials[activeStep].name}
+                    </Typography>
+                    <Rating
+                      value={testimonials[activeStep].rating}
+                      readOnly
+                      size={window.innerWidth < 600 ? "small" : "medium"}
+                      sx={{
+                        color: "#FF9800",
+                        "& .MuiRating-iconFilled": { color: "#FF9800" },
+                      }}
+                    />
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        color: "rgba(255,255,255,0.5)",
+                        display: "block",
+                        mt: 0.5,
+                      }}
+                    >
+                      {new Date(testimonials[activeStep].timestamp).toLocaleDateString()}
+                    </Typography>
+                  </Box>
+                </Box>
 
-            return (
-              <Card
-                key={index}
-                sx={{
-                  background: "rgba(255,255,255,0.05)",
-                  backdropFilter: "blur(10px)",
-                  border: "1px solid rgba(255,255,255,0.1)",
-                  borderRadius: 2,
-                  overflow: "hidden",
-                  transition: "transform 0.3s ease, box-shadow 0.3s ease",
-                  "&:hover": {
-                    transform: "translateY(-5px)",
-                  },
-                }}
-              >
-                <CardContent
+                {/* Responsive Comment Text */}
+                <Typography
+                  variant="body1"
                   sx={{
-                    p: 2,
-                    display: "flex",
-                    flexDirection: "column",
-                    textAlign: "left",
+                    color: "rgba(255,255,255,0.9)",
+                    lineHeight: 1.6,
+                    textAlign: 'left',
+                    mb: 2,
+                    display: '-webkit-box',
+                    WebkitLineClamp: maxLines,
+                    WebkitBoxOrient: 'vertical',
+                    overflow: 'hidden',
+                    fontSize: {
+                      xs: '0.875rem',
+                      sm: '0.9rem',
+                      md: '1rem'
+                    },
+                    minHeight: maxLines * 1.6 + 'em'
                   }}
                 >
-                  <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
-                    <UserAvatar
-                      photoUrl={testimonial.photo}
-                      name={testimonial.name}
-                    />
+                  <Box 
+                    component="span" 
+                    sx={{ 
+                      color: '#FF9800', 
+                      fontSize: {
+                        xs: '1.2rem',
+                        md: '1.5rem'
+                      },
+                      verticalAlign: 'middle',
+                      mr: 0.5
+                    }}
+                  >
+                    "
+                  </Box>
+                  {truncateText(testimonials[activeStep].comment)}
+                  <Box 
+                    component="span" 
+                    sx={{ 
+                      color: '#FF9800', 
+                      fontSize: {
+                        xs: '1.2rem',
+                        md: '1.5rem'
+                      },
+                      verticalAlign: 'middle',
+                      ml: 0.5
+                    }}
+                  >
+                    "
+                  </Box>
+                </Typography>
 
-                    <Box sx={{ ml: 2 }}>
-                      <Typography
-                        variant="subtitle1"
+                {/* Additional Photos Preview */}
+                {testimonials[activeStep].additionalPhotos && 
+                 testimonials[activeStep].additionalPhotos.length > 0 && (
+                  <Box sx={{ mt: 2 }}>
+                    <Box sx={{ display: "flex", gap: 1, justifyContent: 'center', flexWrap: 'wrap' }}>
+                      {testimonials[activeStep].additionalPhotos.slice(0, 3).map((photoUrl, photoIndex) => (
+                        <Box
+                          key={photoIndex}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleImageClick(testimonials[activeStep], photoUrl, photoIndex);
+                          }}
+                          sx={{
+                            width: { xs: 50, sm: 60 },
+                            height: { xs: 50, sm: 60 },
+                            borderRadius: 1,
+                            overflow: "hidden",
+                            cursor: "pointer",
+                            border: "2px solid rgba(255,255,255,0.2)",
+                            transition: "transform 0.2s ease",
+                            "&:hover": {
+                              transform: "scale(1.1)",
+                              borderColor: "#FF9800",
+                            },
+                            flexShrink: 0
+                          }}
+                        >
+                          <img
+                            src={photoUrl}
+                            alt={`Preview ${photoIndex + 1}`}
+                            style={{
+                              width: "100%",
+                              height: "100%",
+                              objectFit: "cover",
+                            }}
+                          />
+                        </Box>
+                      ))}
+                      {testimonials[activeStep].additionalPhotos.length > 3 && (
+                        <Box
+                          sx={{
+                            width: { xs: 50, sm: 60 },
+                            height: { xs: 50, sm: 60 },
+                            borderRadius: 1,
+                            backgroundColor: "rgba(255,152,0,0.2)",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            color: "#FF9800",
+                            fontSize: "0.8rem",
+                            fontWeight: "bold",
+                          }}
+                        >
+                          +{testimonials[activeStep].additionalPhotos.length - 3}
+                        </Box>
+                      )}
+                    </Box>
+                  </Box>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Carousel Navigation */}
+          <IconButton
+            onClick={handleBack}
+            sx={{
+              position: 'absolute',
+              left: { xs: -10, md: -20 },
+              top: '50%',
+              transform: 'translateY(-50%)',
+              color: 'white',
+              backgroundColor: 'rgba(255,152,0,0.8)',
+              '&:hover': {
+                backgroundColor: '#FF9800',
+              },
+              zIndex: 2
+            }}
+          >
+            <KeyboardArrowLeft />
+          </IconButton>
+
+          <IconButton
+            onClick={handleNext}
+            sx={{
+              position: 'absolute',
+              right: { xs: -10, md: -20 },
+              top: '50%',
+              transform: 'translateY(-50%)',
+              color: 'white',
+              backgroundColor: 'rgba(255,152,0,0.8)',
+              '&:hover': {
+                backgroundColor: '#FF9800',
+              },
+              zIndex: 2
+            }}
+          >
+            <KeyboardArrowRight />
+          </IconButton>
+        </Box>
+
+        {/* Carousel Stepper */}
+        <MobileStepper
+          variant="dots"
+          steps={Math.min(maxSteps, testimonials.length)}
+          position="static"
+          activeStep={activeStep}
+          sx={{
+            justifyContent: 'center',
+            backgroundColor: 'transparent',
+            mt: 2,
+            '& .MuiMobileStepper-dot': {
+              backgroundColor: 'rgba(255,255,255,0.3)',
+              '&.MuiMobileStepper-dotActive': {
+                backgroundColor: '#FF9800',
+              }
+            }
+          }}
+          nextButton={null}
+          backButton={null}
+        />
+
+        {/* View All Button - Only show if there are more than 10 testimonials */}
+        {allTestimonials.length > maxSteps && (
+          <Box sx={{ display: "flex", justifyContent: "center", mt: 3 }}>
+            <Button
+              onClick={handleViewAll}
+              variant="outlined"
+              startIcon={<ViewCarousel />}
+              sx={{
+                color: "#FF9800",
+                borderColor: "#FF9800",
+                "&:hover": {
+                  borderColor: "#FF5722",
+                  backgroundColor: "rgba(255,152,0,0.1)",
+                  transform: "translateY(-2px)",
+                },
+                transition: "all 0.3s ease",
+                fontWeight: 600,
+                px: 3,
+                py: 1,
+              }}
+            >
+              View All Testimonials ({allTestimonials.length})
+            </Button>
+          </Box>
+        )}
+      </Box>
+
+      {/* All Testimonials Dialog */}
+      <Dialog
+        open={allTestimonialsDialogOpen}
+        onClose={handleCloseDialogs}
+        maxWidth="lg"
+        fullWidth
+        sx={{
+          "& .MuiDialog-paper": {
+            background: "rgba(0,0,0,0.95)",
+            color: "white",
+            backdropFilter: "blur(10px)",
+            borderRadius: 2,
+            maxHeight: '90vh',
+            // Custom scrollbar for dialog
+            '& ::-webkit-scrollbar': {
+              width: '8px',
+            },
+            '& ::-webkit-scrollbar-track': {
+              background: 'rgba(255,255,255,0.1)',
+              borderRadius: '4px',
+            },
+            '& ::-webkit-scrollbar-thumb': {
+              background: 'linear-gradient(45deg, #FF9800 30%, #FF5722 90%)',
+              borderRadius: '4px',
+            },
+            '& ::-webkit-scrollbar-thumb:hover': {
+              background: 'linear-gradient(45deg, #FF5722 30%, #FF9800 90%)',
+            },
+          },
+        }}
+      >
+        <Box sx={{ p: 3 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+            <Typography
+              variant="h4"
+              sx={{
+                fontFamily: "'AlanSans', sans-serif",
+                fontWeight: 700,
+                background: "linear-gradient(45deg, #FF9800 30%, #FF5722 90%)",
+                backgroundClip: "text",
+                WebkitBackgroundClip: "text",
+                color: "transparent",
+              }}
+            >
+              All Testimonials ({allTestimonials.length})
+            </Typography>
+            <IconButton
+              onClick={handleCloseDialogs}
+              sx={{
+                color: "white",
+                background: "rgba(0,0,0,0.5)",
+                "&:hover": {
+                  background: "rgba(255,0,0,0.5)",
+                },
+              }}
+            >
+              <Close />
+            </IconButton>
+          </Box>
+
+          <Grid container spacing={3} sx={{ maxHeight: '70vh', overflow: 'auto', pr: 1 }}>
+            {allTestimonials.map((testimonial, index) => (
+              <Grid item xs={12} sm={6} md={4} key={index}>
+                <Card
+                  onClick={() => {
+                    setSelectedTestimonial(testimonial);
+                    setDetailDialogOpen(true);
+                  }}
+                  sx={{
+                    background: "rgba(255,255,255,0.05)",
+                    backdropFilter: "blur(10px)",
+                    border: "1px solid rgba(255,255,255,0.1)",
+                    borderRadius: 2,
+                    overflow: "hidden",
+                    cursor: 'pointer',
+                    transition: "transform 0.3s ease, box-shadow 0.3s ease",
+                    "&:hover": {
+                      transform: "translateY(-5px)",
+                      boxShadow: "0 10px 30px rgba(255,152,0,0.3)",
+                    },
+                    height: '100%',
+                    display: 'flex',
+                    flexDirection: 'column'
+                  }}
+                >
+                  <CardContent sx={{ p: 2, flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+                    <Box sx={{ display: "flex", alignItems: "center", mb: 1.5 }}>
+                      <Box
                         sx={{
-                          color: "#FFFF",
-                          fontWeight: 600,
-                          fontFamily: "'AlanSans', sans-serif",
+                          width: 50,
+                          height: 50,
+                          borderRadius: '50%',
+                          overflow: 'hidden',
+                          mr: 1.5,
+                          border: '2px solid #FF9800',
+                          flexShrink: 0
                         }}
                       >
-                        {testimonial.name}
-                      </Typography>
-                      <Rating
-                        value={testimonial.rating}
-                        readOnly
-                        size="small"
-                        sx={{
-                          color: "#FF9800",
-                          "& .MuiRating-iconFilled": { color: "#FF9800" },
+                        <img
+                          src={testimonial.photo || '/default-avatar.png'}
+                          alt={testimonial.name}
+                          style={{
+                            width: '100%',
+                            height: '100%',
+                            objectFit: 'cover'
+                          }}
+                          onError={(e) => {
+                            e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTAiIGhlaWdodD0iNTAiIHZpZXdCb3g9IjAgMCA1MCA1MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMjUiIGN5PSIyNSIgcj0iMjUiIGZpbGw9IiNGRjk4MDAiLz4KPHN2ZyB4PSIxMi41IiB5PSIxMi41IiB3aWR0aD0iMjUiIGhlaWdodD0iMjUiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0id2hpdGUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxwYXRoIGQ9Ik0xMiAxMmMyLjIxIDAgNC0xLjc5IDQtNHMtMS43OS00LTQtNC00IDEuNzktNCA0IDEuNzkgNCA0IDR6bTAgMmMtMi42NyAwLTggMS4zNC04IDR2MmgxNnYtMmMwLTIuNjYtNS4zMy00LTgtNHoiLz4KPC9zdmc+Cjwvc3ZnPg==';
+                          }}
+                        />
+                      </Box>
+                      <Box sx={{ flexGrow: 1 }}>
+                        <Typography
+                          variant="subtitle1"
+                          sx={{
+                            color: "#FFFF",
+                            fontWeight: 600,
+                            fontFamily: "'AlanSans', sans-serif",
+                            fontSize: '0.9rem',
+                            lineHeight: 1.2,
+                            mb: 0.5
+                          }}
+                        >
+                          {testimonial.name}
+                        </Typography>
+                        <Rating
+                          value={testimonial.rating}
+                          readOnly
+                          size="small"
+                          sx={{
+                            color: "#FF9800",
+                            "& .MuiRating-iconFilled": { color: "#FF9800" },
+                          }}
+                        />
+                      </Box>
+                    </Box>
+
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        color: "rgba(255,255,255,0.9)",
+                        lineHeight: 1.5,
+                        textAlign: 'left',
+                        flexGrow: 1,
+                        mb: 1,
+                        display: '-webkit-box',
+                        WebkitLineClamp: 3,
+                        WebkitBoxOrient: 'vertical',
+                        overflow: 'hidden',
+                      }}
+                    >
+                      <Box 
+                        component="span" 
+                        sx={{ 
+                          color: '#FF9800', 
+                          fontSize: '1rem',
+                          verticalAlign: 'middle',
+                          mr: 0.5
                         }}
-                      />
+                      >
+                        "
+                      </Box>
+                      {truncateText(testimonial.comment, 120)}
+                      <Box 
+                        component="span" 
+                        sx={{ 
+                          color: '#FF9800', 
+                          fontSize: '1rem',
+                          verticalAlign: 'middle',
+                          ml: 0.5
+                        }}
+                      >
+                        "
+                      </Box>
+                    </Typography>
+
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 'auto' }}>
                       <Typography
                         variant="caption"
                         sx={{
                           color: "rgba(255,255,255,0.5)",
-                          display: "block",
-                          mt: 0.5,
                         }}
                       >
                         {new Date(testimonial.timestamp).toLocaleDateString()}
                       </Typography>
-                      {testimonial.source && (
+                      
+                      {testimonial.additionalPhotos && testimonial.additionalPhotos.length > 0 && (
                         <Chip
-                          label={testimonial.source}
+                          label={`${testimonial.additionalPhotos.length} 📸`}
                           size="small"
                           sx={{
-                            mt: 0.5,
                             height: 20,
                             fontSize: '0.6rem',
                             backgroundColor: 'rgba(255,152,0,0.2)',
@@ -354,165 +864,245 @@ const Testimonial = () => {
                         />
                       )}
                     </Box>
-                  </Box>
+                  </CardContent>
+                </Card>
+              </Grid>
+            ))}
+          </Grid>
+        </Box>
+      </Dialog>
 
-                  <div className="relative text-[rgba(255,255,255,0.9)] font-in px-2 text-center flex mb-2">
-                    <p>
-                      <b className="px-2 text-[#ff9800] text-2xl font-riope">"</b>
-                      {testimonial.comment}
-                      <b className="px-2 text-[#ff9800] text-2xl font-riope">"</b>
-                    </p>
-                  </div>
-
-                  {/* Additional Photos Masonry - Only show additional photos */}
-                  {hasAdditionalPhotos && (
-                    <Box sx={{ mt: 2 }}>
-                      <Box
-                        sx={{
-                          display: "grid",
-                          gridTemplateColumns: "repeat(3, 1fr)",
-                          gap: 1,
-                        }}
-                      >
-                        {additionalPhotos.map((photoUrl, photoIndex) => {
-                          // FIXED: Safe URL check
-                          const isValidUrl = testImageUrl(photoUrl);
-
-                          return (
-                            <Box
-                              key={photoIndex}
-                              onClick={() => {
-                                if (isValidUrl) {
-                                  handleImageClick(
-                                    testimonial,
-                                    photoUrl,
-                                    photoIndex
-                                  );
-                                }
-                              }}
-                              sx={{
-                                cursor: isValidUrl ? "pointer" : "not-allowed",
-                                borderRadius: 1,
-                                overflow: "hidden",
-                                transition: "transform 0.2s ease",
-                                "&:hover": {
-                                  transform: isValidUrl ? "scale(1.05)" : "none",
-                                },
-                                aspectRatio: "1",
-                                backgroundColor: isValidUrl
-                                  ? "rgba(255,255,255,0.1)"
-                                  : "rgba(255,0,0,0.3)",
-                                border: isValidUrl
-                                  ? "1px solid rgba(255,255,255,0.2)"
-                                  : "1px solid rgba(255,0,0,0.5)",
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                position: "relative",
-                              }}
-                            >
-                              {isValidUrl ? (
-                                <img
-                                  src={photoUrl}
-                                  alt={`Additional photo ${photoIndex + 1} by ${testimonial.name}`}
-                                  style={{
-                                    width: "100%",
-                                    height: "100%",
-                                    objectFit: "cover",
-                                    display: "block",
-                                  }}
-                                  onError={(e) => {
-                                    console.error("Image failed to load:", photoUrl);
-                                    e.target.style.display = "none";
-                                    e.target.parentElement.innerHTML = `
-                                      <div style="color: rgba(255,255,255,0.7); font-size: 10px; text-align: center; padding: 4px;">
-                                        ❌ Load Failed
-                                      </div>
-                                    `;
-                                  }}
-                                />
-                              ) : (
-                                <div
-                                  style={{
-                                    color: "white",
-                                    fontSize: "10px",
-                                    textAlign: "center",
-                                    padding: "4px",
-                                  }}
-                                >
-                                  ⚠️ Invalid Image
-                                  <br />
-                                  <small style={{ fontSize: '8px', opacity: 0.7 }}>
-                                    {typeof photoUrl === 'string' ? 
-                                      photoUrl.substring(0, 10) + '...' : 
-                                      'Non-string URL'
-                                    }
-                                  </small>
-                                </div>
-                              )}
-                            </Box>
-                          );
-                        })}
-                      </Box>
-                      {/* <Typography 
-                        variant="caption" 
-                        sx={{ 
-                          color: "rgba(255,255,255,0.5)", 
-                          mt: 0.5, 
-                          display: "block",
-                          fontSize: '0.7rem'
-                        }}
-                      >
-                        📸 {additionalPhotos.length} additional photo{additionalPhotos.length !== 1 ? 's' : ''}
-                      </Typography> */}
-                    </Box>
-                  )}
-                </CardContent>
-              </Card>
-            );
-          })}
-        </Masonry>
-
-        {/* View More/Less Button */}
-        {testimonials.length > itemsPerPage && (
-          <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
-            <Button
-              onClick={toggleShowAll}
-              variant="outlined"
+      {/* Detail Dialog */}
+      <Dialog
+        open={detailDialogOpen}
+        onClose={handleCloseDialogs}
+        maxWidth="md"
+        fullWidth
+        sx={{
+          "& .MuiDialog-paper": {
+            background: "rgba(0,0,0,0.95)",
+            color: "white",
+            backdropFilter: "blur(10px)",
+            borderRadius: 2,
+            // Custom scrollbar for dialog
+            '& ::-webkit-scrollbar': {
+              width: '6px',
+            },
+            '& ::-webkit-scrollbar-track': {
+              background: 'rgba(255,255,255,0.1)',
+              borderRadius: '3px',
+            },
+            '& ::-webkit-scrollbar-thumb': {
+              background: 'linear-gradient(45deg, #FF9800 30%, #FF5722 90%)',
+              borderRadius: '3px',
+            },
+            '& ::-webkit-scrollbar-thumb:hover': {
+              background: 'linear-gradient(45deg, #FF5722 30%, #FF9800 90%)',
+            },
+          },
+        }}
+      >
+        {selectedTestimonial && (
+          <>
+            <IconButton
+              onClick={handleCloseDialogs}
               sx={{
-                color: "#FF9800",
-                borderColor: "#FF9800",
+                position: "absolute",
+                right: 8,
+                top: 8,
+                color: "white",
+                background: "rgba(0,0,0,0.5)",
                 "&:hover": {
-                  borderColor: "#FF5722",
-                  backgroundColor: "rgba(255,152,0,0.1)",
+                  background: "rgba(255,0,0,0.5)",
                 },
+                zIndex: 1000,
               }}
             >
-              {showAll
-                ? "View Less"
-                : `View More (${testimonials.length - itemsPerPage} more)`}
-            </Button>
-          </Box>
-        )}
-      </Box>
+              <Close />
+            </IconButton>
 
-      {/* Image Dialog - Only shows additional photos */}
+            <CardContent sx={{ p: 3, maxHeight: '80vh', overflow: 'auto' }}>
+              {/* Smaller Profile Photo Section */}
+              <Box sx={{ display: "flex", alignItems: "flex-start", mb: 3 }}>
+                <Box
+                  sx={{
+                    width: 60,
+                    height: 60,
+                    borderRadius: '50%',
+                    overflow: 'hidden',
+                    mr: 2,
+                    border: '2px solid #FF9800',
+                    flexShrink: 0
+                  }}
+                >
+                  <img
+                    src={selectedTestimonial.photo || '/default-avatar.png'}
+                    alt={selectedTestimonial.name}
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'cover'
+                    }}
+                  />
+                </Box>
+                <Box sx={{ flexGrow: 1 }}>
+                  <Typography
+                    variant="h6"
+                    sx={{
+                      color: "white",
+                      fontWeight: 600,
+                      fontFamily: "'AlanSans', sans-serif",
+                      mb: 0.5,
+                      fontSize: '1.25rem'
+                    }}
+                  >
+                    {selectedTestimonial.name}
+                  </Typography>
+                  <Rating
+                    value={selectedTestimonial.rating}
+                    readOnly
+                    size="small"
+                    sx={{ color: "#FF9800", mb: 0.5 }}
+                  />
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        color: "rgba(255,255,255,0.7)",
+                      }}
+                    >
+                      {new Date(selectedTestimonial.timestamp).toLocaleDateString()}
+                    </Typography>
+                    {selectedTestimonial.source && (
+                      <Chip
+                        label={selectedTestimonial.source}
+                        size="small"
+                        sx={{
+                          backgroundColor: 'rgba(255,152,0,0.2)',
+                          color: '#FF9800',
+                          height: 24,
+                          fontSize: '0.75rem'
+                        }}
+                      />
+                    )}
+                  </Box>
+                </Box>
+              </Box>
+
+              {/* Comment Text */}
+              <Typography
+                variant="body1"
+                sx={{
+                  color: "rgba(255,255,255,0.9)",
+                  lineHeight: 1.7,
+                  fontSize: '1rem',
+                  mb: 3,
+                  textAlign: 'left'
+                }}
+              >
+                <Box 
+                  component="span" 
+                  sx={{ 
+                    color: '#FF9800', 
+                    fontSize: '1.5rem',
+                    verticalAlign: 'middle',
+                    mr: 0.5
+                  }}
+                >
+                  "
+                </Box>
+                {selectedTestimonial.comment}
+                <Box 
+                  component="span" 
+                  sx={{ 
+                    color: '#FF9800', 
+                    fontSize: '1.5rem',
+                    verticalAlign: 'middle',
+                    ml: 0.5
+                  }}
+                >
+                  "
+                </Box>
+              </Typography>
+
+              {/* Additional Photos in Detail Dialog */}
+              {selectedTestimonial.additionalPhotos && 
+               selectedTestimonial.additionalPhotos.length > 0 && (
+                <Box sx={{ mt: 3 }}>
+                  <Typography variant="subtitle1" sx={{ color: "white", mb: 2, fontSize: '1rem' }}>
+                    Additional Photos ({selectedTestimonial.additionalPhotos.length})
+                  </Typography>
+                  <Box
+                    sx={{
+                      display: "grid",
+                      gridTemplateColumns: { xs: "repeat(3, 1fr)", sm: "repeat(4, 1fr)", md: "repeat(5, 1fr)" },
+                      gap: 1.5,
+                    }}
+                  >
+                    {selectedTestimonial.additionalPhotos.map((photoUrl, photoIndex) => (
+                      <Box
+                        key={photoIndex}
+                        onClick={() => handleImageClick(selectedTestimonial, photoUrl, photoIndex)}
+                        sx={{
+                          cursor: "pointer",
+                          borderRadius: 1.5,
+                          overflow: "hidden",
+                          transition: "transform 0.2s ease",
+                          "&:hover": {
+                            transform: "scale(1.05)",
+                          },
+                          aspectRatio: "1",
+                          border: "2px solid rgba(255,255,255,0.2)",
+                        }}
+                      >
+                        <img
+                          src={photoUrl}
+                          alt={`Additional photo ${photoIndex + 1}`}
+                          style={{
+                            width: "100%",
+                            height: "100%",
+                            objectFit: "cover",
+                          }}
+                        />
+                      </Box>
+                    ))}
+                  </Box>
+                </Box>
+              )}
+            </CardContent>
+          </>
+        )}
+      </Dialog>
+
+      {/* Image Dialog */}
       <Dialog
         open={imageDialogOpen}
-        onClose={handleCloseDialog}
+        onClose={handleCloseDialogs}
         maxWidth="lg"
         fullWidth
         sx={{
           "& .MuiDialog-paper": {
             background: "rgba(0,0,0,0.99)",
             color: "white",
+            // Custom scrollbar for image dialog
+            '& ::-webkit-scrollbar': {
+              width: '6px',
+            },
+            '& ::-webkit-scrollbar-track': {
+              background: 'rgba(255,255,255,0.1)',
+              borderRadius: '3px',
+            },
+            '& ::-webkit-scrollbar-thumb': {
+              background: 'linear-gradient(45deg, #FF9800 30%, #FF5722 90%)',
+              borderRadius: '3px',
+            },
           },
         }}
       >
         {selectedImage && selectedTestimonial && (
           <>
             <IconButton
-              onClick={handleCloseDialog}
+              onClick={handleCloseDialogs}
               sx={{
                 position: "absolute",
                 right: 8,
@@ -582,16 +1172,6 @@ const Testimonial = () => {
                   maxHeight: "70vh",
                   objectFit: "contain",
                 }}
-                onError={(e) => {
-                  console.error("Dialog image failed to load:", selectedImage);
-                  e.target.style.display = "none";
-                  e.target.parentElement.innerHTML = `
-                    <div style="color: white; text-align: center; padding: 20px;">
-                      <div style="font-size: 24px; margin-bottom: 10px;">❌</div>
-                      <div>Image failed to load</div>
-                    </div>
-                  `;
-                }}
               />
             </Box>
 
@@ -646,6 +1226,9 @@ const Testimonial = () => {
         </Box>
       )}
     </Box>
+    </div>
+
+    
   );
 };
 

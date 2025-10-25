@@ -1,21 +1,21 @@
 {
   "files": {
-    "main.css": "/static/css/main.6fa215c9.css",
+    "main.css": "/static/css/main.e4c9ac69.css",
     "main.js": "/static/js/main.e65b7d5d.js",
     "static/media/HomebgImage.png": "/static/media/HomebgImage.27089868ab84a2aa251a.png",
     "static/media/HomebgImagemb.png": "/static/media/HomebgImagemb.ab5484e7a62969486739.png",
     "static/media/color.png": "/static/media/color.c6b03927f5d91b13ec1d.png",
-    "static/media/img1.jpg": "/static/media/img1.a830be3a1e9a039fc0aa.jpg",
+    "static/media/img1.jpg": "/static/media/img1.05fc30c8cc0c271c5302.jpg",
     "static/media/AlanSans-VariableFont_wght.ttf": "/static/media/AlanSans-VariableFont_wght.9f305f5e2357889fc4d0.ttf",
     "static/media/img2.jpg": "/static/media/img2.f51dce4aa2fb006b11b7.jpg",
     "static/media/Riope.ttf": "/static/media/Riope.fc4a237253baac85e8e7.ttf",
     "static/media/india.png": "/static/media/india.be08e68d113168b54197.png",
     "index.html": "/index.html",
-    "main.6fa215c9.css.map": "/static/css/main.6fa215c9.css.map",
+    "main.e4c9ac69.css.map": "/static/css/main.e4c9ac69.css.map",
     "main.e65b7d5d.js.map": "/static/js/main.e65b7d5d.js.map"
   },
   "entrypoints": [
-    "static/css/main.6fa215c9.css",
+    "static/css/main.e4c9ac69.css",
     "static/js/main.e65b7d5d.js"
   ]
 }

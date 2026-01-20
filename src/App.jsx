@@ -19,13 +19,13 @@ const App = () => {
   const aboutRef = useRef(null);
 
   // Single API call to fetch data
-  const fetchData = async (forceRefresh = false) => {
+  const fetchData = async () => {
     try {
       setLoading(true);
       setError(null);
       
       // Use single API endpoint with optional refresh parameter
-      const url = `${SERVER_URL}/api/web-content${forceRefresh ? '?refresh=true' : ''}`;
+      const url = `${SERVER_URL}/api/web-content`;
       
       const response = await fetch(url);
       

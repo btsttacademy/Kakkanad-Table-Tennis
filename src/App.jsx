@@ -149,7 +149,10 @@ const App = () => {
               feature1Description={contentData.dd1}
               feature2Heading={contentData.dh2}
               feature2Description={contentData.dd2}
-              images={[contentData.img1, contentData.img2, contentData.img3]}
+              img1={contentData.img1}
+              img2={contentData.img2}
+              img3={contentData.img3}
+              // images={[contentData.img1, contentData.img2, contentData.img3]}
               coachingHeading={contentData.coaching}
               coachingDescription={contentData.coachingDes}
               groupCoachingHeading={contentData.Groupcoaching}

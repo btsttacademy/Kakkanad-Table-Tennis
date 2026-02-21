@@ -1,5 +1,5 @@
 import { LiaTableTennisSolid } from "react-icons/lia";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Dialog,
   DialogTitle,
@@ -26,8 +26,81 @@ const About = ({
   timing1Description,
   timing2Heading,
   timing2Description,
+  img1,
+  img2,
+  img3,
 }) => {
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [imageErrors, setImageErrors] = useState({});
+  const [imageUrls, setImageUrls] = useState({});
+
+  useEffect(() => {
+    // Log the received image props for debugging
+    console.log('Image props received:', { img1, img2, img3 });
+    
+    // Process each image URL
+    const processImageUrl = (url, key) => {
+      if (!url) {
+        console.log(`${key} is empty or undefined`);
+        return '';
+      }
+      
+      console.log(`Processing ${key}:`, url);
+      
+      // Check if it's a Google Drive link
+      if (url.includes('drive.google.com')) {
+        console.log(`${key} is a Google Drive link`);
+        
+        // Try multiple Google Drive URL formats
+        let fileId = '';
+        
+        // Format 1: /file/d/FILE_ID/view
+        const fileMatch = url.match(/\/d\/([^\/]+)/);
+        if (fileMatch) {
+          fileId = fileMatch[1];
+          console.log(`${key} - Extracted fileId from /d/ format:`, fileId);
+        }
+        
+        // Format 2: id=FILE_ID
+        const idMatch = url.match(/[?&]id=([^&]+)/);
+        if (idMatch) {
+          fileId = idMatch[1];
+          console.log(`${key} - Extracted fileId from id= format:`, fileId);
+        }
+        
+        // Format 3: Extract from the specific link you provided
+        // https://drive.google.com/file/d/16v6yc_ZfubXTpO2zs6GIEwS2RZbKJwQB/view?usp=sharing
+        if (url.includes('/file/d/')) {
+          const parts = url.split('/file/d/');
+          if (parts.length > 1) {
+            const idPart = parts[1].split('/')[0];
+            fileId = idPart;
+            console.log(`${key} - Extracted fileId from /file/d/ format:`, fileId);
+          }
+        }
+        
+        if (fileId) {
+          // Try different Google Drive image serving formats
+          const formats = [
+            `https://drive.google.com/uc?export=view&id=${fileId}`,  // Standard export
+            `https://drive.google.com/thumbnail?id=${fileId}`,        // Thumbnail format
+            `https://lh3.googleusercontent.com/d/${fileId}`,          // Google user content
+          ];
+          
+          console.log(`${key} - Generated URL formats:`, formats);
+          return formats[0]; // Return first format, we'll try others on error
+        }
+      }
+      
+      return url;
+    };
+    
+    setImageUrls({
+      img1: processImageUrl(img1, 'img1'),
+      img2: processImageUrl(img2, 'img2'),
+      img3: processImageUrl(img3, 'img3'),
+    });
+  }, [img1, img2, img3]);
 
   const handleOpenDialog = () => {
     setDialogOpen(true);
@@ -35,6 +108,58 @@ const About = ({
 
   const handleCloseDialog = () => {
     setDialogOpen(false);
+  };
+
+  const handleImageError = (imgNumber, attemptedUrl) => {
+    console.log(`Image ${imgNumber} failed to load:`, attemptedUrl);
+    
+    // Try alternative Google Drive formats if this is a Google Drive URL
+    if (attemptedUrl.includes('drive.google.com') || attemptedUrl.includes('googleusercontent')) {
+      const fileId = extractFileIdFromUrl(attemptedUrl);
+      if (fileId) {
+        // Try different format
+        const currentFormat = imageUrls[imgNumber];
+        let newUrl = '';
+        
+        if (currentFormat.includes('uc?export=view')) {
+          newUrl = `https://drive.google.com/thumbnail?id=${fileId}`;
+        } else if (currentFormat.includes('thumbnail')) {
+          newUrl = `https://lh3.googleusercontent.com/d/${fileId}`;
+        } else {
+          newUrl = `https://drive.google.com/uc?export=view&id=${fileId}`;
+        }
+        
+        console.log(`Trying alternative format for ${imgNumber}:`, newUrl);
+        
+        setImageUrls(prev => ({
+          ...prev,
+          [imgNumber]: newUrl
+        }));
+        
+        // Don't mark as error yet, let's try the new URL
+        return;
+      }
+    }
+    
+    // If all attempts fail, mark as error
+    setImageErrors(prev => ({ ...prev, [imgNumber]: true }));
+  };
+
+  const extractFileIdFromUrl = (url) => {
+    const patterns = [
+      /id=([^&]+)/,
+      /\/d\/([^\/]+)/,
+      /\/thumbnail\?id=([^&]+)/,
+      /googleusercontent\.com\/d\/([^\/]+)/
+    ];
+    
+    for (const pattern of patterns) {
+      const match = url.match(pattern);
+      if (match) {
+        return match[1];
+      }
+    }
+    return null;
   };
 
   return (
@@ -53,7 +178,7 @@ const About = ({
               border-orange-500
               hover:shadow-xl
               active:shadow-md
-              rounded-lg
+              rounded-lgf 
               transition-all
               duration-300
               ease-out
@@ -68,15 +193,54 @@ const About = ({
           </button>
         </div>
         <div className="flex-1 flex gap-2">
-          <div className="flex-1 rounded-lg max-[750px]:h-[400px] bg-img1 bg-cover bg-center bg-no-repeat"></div>
+          <div className="flex-1 rounded-lg max-[750px]:h-[400px] overflow-hidden">
+            {!imageErrors.img1 ? (
+              <img 
+                src={imageUrls.img1 || img1} 
+                alt="Table tennis 1"
+                className="w-full h-full object-cover"
+                onError={(e) => handleImageError('img1', e.target.src)}
+              />
+            ) : (
+              <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+                <span className="text-gray-500">Image not available</span>
+              </div>
+            )}
+          </div>
           <div className="flex-1 flex gap-2 flex-col">
-            <div className="rounded-lg flex-1 bg-img2 bg-cover bg-center bg-no-repeat"></div>
-            <div className="rounded-lg flex-1 bg-img3 bg-cover bg-center bg-no-repeat"></div>
+            <div className="rounded-lg flex-1 overflow-hidden">
+              {!imageErrors.img2 ? (
+                <img 
+                  src={imageUrls.img2 || img2} 
+                  alt="Table tennis 2"
+                  className="w-full h-full object-cover"
+                  onError={(e) => handleImageError('img2', e.target.src)}
+                />
+              ) : (
+                <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+                  <span className="text-gray-500">Image not available</span>
+                </div>
+              )}
+            </div>
+            <div className="rounded-lg flex-1 overflow-hidden">
+              {!imageErrors.img3 ? (
+                <img 
+                  src={imageUrls.img3 || img3} 
+                  alt="Table tennis 3"
+                  className="w-full h-full object-cover"
+                  onError={(e) => handleImageError('img3', e.target.src)}
+                />
+              ) : (
+                <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+                  <span className="text-gray-500">Image not available</span>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Dialog Box */}
+      {/* Dialog Box - rest of your code remains the same */}
       <Dialog
         open={dialogOpen}
         onClose={handleCloseDialog}
@@ -140,8 +304,6 @@ const About = ({
                   Martial Arts Academy")
                 </p>
               </div>
-              {/* <pre className=" font-in">{feature1Description}</pre> */}
-              
             </div>
 
             <div className="mb-4">

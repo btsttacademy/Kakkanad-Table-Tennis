@@ -20,8 +20,8 @@ const Footer = () => {
             
           </div>
           <div className=" flex gap-5 ">
-            <LuInstagram className=" text-white hover:text-orange-500 cursor-pointer transition-colors duration-300" />
-            <FaFacebook className=" text-white hover:text-orange-500 cursor-pointer transition-colors duration-300" />
+            {/* <LuInstagram className=" text-white hover:text-orange-500 cursor-pointer transition-colors duration-300" />
+            <FaFacebook className=" text-white hover:text-orange-500 cursor-pointer transition-colors duration-300" /> */}
           </div>
         </div>
         <p className=" py-7 font-in text-sm text-gray-300">

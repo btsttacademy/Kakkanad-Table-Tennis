@@ -81,9 +81,9 @@ const NavBar = () => {
   // Phone number to call
   const phoneNumber = "7012266274"; // Replace with your actual phone number
 
-  useEffect(() => {
-    refreshTestimonials()      
-  }, []);
+  // useEffect(() => {
+  //   refreshTestimonials()      
+  // }, []);
 
   // Function to refresh testimonials
   const refreshTestimonials = async () => {
@@ -466,7 +466,7 @@ const NavBar = () => {
       >
         <Toolbar sx={{ justifyContent: "space-between", padding: "8px 0" }}>
           <Box sx={{ display: "flex", alignItems: "center" }}>
-            <img src={colorLogo} className=" w-16" />
+            <img src={colorLogo} className=" w-20 bg-white rounded-full" />
           </Box>
           <Box
             sx={{
